@@ -18,6 +18,7 @@ package collector
 import (
 	"bufio"
 	"os"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -25,8 +26,13 @@ import (
 )
 
 const (
-	defIgnoredMountPoints = "^/(sys|proc|dev)($|/)"
-	ST_RDONLY             = 0x1
+	defIgnoredMountPoints      = "^/(sys|proc|dev)($|/)"
+	defStrippedMountPointPaths = ""
+	ST_RDONLY                  = 0x1
+)
+
+var (
+	rDoubleSlash = regexp.MustCompile("//")
 )
 
 type filesystemDetails struct {
@@ -60,7 +66,13 @@ func (c *filesystemCollector) GetStats() (stats []filesystemStats, err error) {
 			ro = 1
 		}
 
-		labelValues := []string{mpd.device, mpd.mountPoint, mpd.fsType}
+		mountPoint := rDoubleSlash.ReplaceAllString(
+			c.strippedMountPointPathsPattern.ReplaceAllString(mpd.mountPoint, "/"),
+			"/")
+		labelValues := []string{
+			mpd.device,
+			mountPoint,
+			mpd.fsType}
 		stats = append(stats, filesystemStats{
 			labelValues: labelValues,
 			size:        float64(buf.Blocks) * float64(buf.Bsize),

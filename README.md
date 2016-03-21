@@ -99,3 +99,12 @@ docker pull prom/node-exporter
 
 docker run -d -p 9100:9100 --net="host" prom/node-exporter
 ```
+
+Note that Docker (and containers in general) is designed to separate a container's runtime from the
+host.  If you are running the node_exporter inside of Docker to export statistics about the host,
+use a command similar to:
+
+    docker run -d -p 9100:9100 -v "/proc:/host/proc" -v "/sys:/host/sys" -v "/:/rootfs" --net="host" prom/node-exporter -collector.procfs /host/proc -collector.sysfs /host/proc -collector.filesystem.ignored-mount-points "^/(sys|proc|dev|host|etc|rootfs/sys|rootfs/var/lib|)($|/)" -collector.filesystem.stripped-mount-point-paths "^/rootfs"
+
+See [Setting up the Node Exporter (in Docker)](https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-using-docker-on-ubuntu-14-04#step-2-—-setting-up-node-exporter)
+for more details.

@@ -25,6 +25,7 @@ import (
 
 // Arch-dependent implementation must define:
 // * defIgnoredMountPoints
+// * defStrippedMountPointPaths
 // * filesystemLabelNames
 // * filesystemCollector.GetStats
 
@@ -34,11 +35,17 @@ var (
 		defIgnoredMountPoints,
 		"Regexp of mount points to ignore for filesystem collector.")
 
+	strippedMountPointPaths = flag.String(
+		"collector.filesystem.stripped-mount-point-paths",
+		defStrippedMountPointPaths,
+		"Regexp of mount point paths to remove for filesystem collector.")
+
 	filesystemLabelNames = []string{"device", "mountpoint", "fstype"}
 )
 
 type filesystemCollector struct {
-	ignoredMountPointsPattern *regexp.Regexp
+	ignoredMountPointsPattern      *regexp.Regexp
+	strippedMountPointPathsPattern *regexp.Regexp
 	sizeDesc, freeDesc, availDesc,
 	filesDesc, filesFreeDesc, roDesc *prometheus.Desc
 }
@@ -56,7 +63,8 @@ func init() {
 // Filesystems stats.
 func NewFilesystemCollector() (Collector, error) {
 	subsystem := "filesystem"
-	pattern := regexp.MustCompile(*ignoredMountPoints)
+	ignoredMountPointsPattern := regexp.MustCompile(*ignoredMountPoints)
+	strippedMountPointPathsPattern := regexp.MustCompile(*strippedMountPointPaths)
 
 	sizeDesc := prometheus.NewDesc(
 		prometheus.BuildFQName(Namespace, subsystem, "size"),
@@ -95,13 +103,14 @@ func NewFilesystemCollector() (Collector, error) {
 	)
 
 	return &filesystemCollector{
-		ignoredMountPointsPattern: pattern,
-		sizeDesc:                  sizeDesc,
-		freeDesc:                  freeDesc,
-		availDesc:                 availDesc,
-		filesDesc:                 filesDesc,
-		filesFreeDesc:             filesFreeDesc,
-		roDesc:                    roDesc,
+		ignoredMountPointsPattern:      ignoredMountPointsPattern,
+		strippedMountPointPathsPattern: strippedMountPointPathsPattern,
+		sizeDesc:                       sizeDesc,
+		freeDesc:                       freeDesc,
+		availDesc:                      availDesc,
+		filesDesc:                      filesDesc,
+		filesFreeDesc:                  filesFreeDesc,
+		roDesc:                         roDesc,
 	}, nil
 }
 
